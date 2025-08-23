@@ -1,7 +1,14 @@
 from fastapi import FastAPI
 from app.routes import auth, chat # user, finance
-
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="WealthWise Backend", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # ⚠️ for dev, later restrict to your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # # Register routes
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
