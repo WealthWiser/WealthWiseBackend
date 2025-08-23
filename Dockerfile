@@ -1,18 +1,19 @@
-# Use an official lightweight Python image
+# Dockerfile
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install dependencies
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
 COPY . .
 
-# Expose the port FastAPI will run on
+# Render will map this port; we’ll still default to 8000 locally
+ENV PORT=8000
 EXPOSE 8000
 
-# Start FastAPI with uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use $PORT if Render sets it, otherwise 8000 locally; add a generous keep-alive
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --timeout-keep-alive 120"]
