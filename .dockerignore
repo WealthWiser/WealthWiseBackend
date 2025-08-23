@@ -1,0 +1,33 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Env (secrets never go inside Docker image)
+.env
+
+# Tests and coverage
+.pytest_cache/
+.coverage
+htmlcov/
