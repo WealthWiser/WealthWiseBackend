@@ -86,7 +86,7 @@ def open_pdf_as_bytes(path: str, password: Optional[str]) -> bytes:
 
 # ---------------- Core extraction ----------------
 def extract_transactions_from_bytes(pdf_bytes: bytes) -> pd.DataFrame:
-    print("starting the extraction...\n\n")
+    # print("starting the extraction...\n\n")
     rows = []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:

@@ -24,8 +24,6 @@ async def parse_transactions(token: str = Depends(security), pdf: UploadFile = F
 
             # Use your helper function
             transactions = extract_transactions_from_uploaded_bytes(pdf_bytes, password)
-            print(transactions)
-            print(type(transactions))
 
             return JSONResponse(content=jsonable_encoder({"transactions": transactions}))
         except ValueError as ve:
