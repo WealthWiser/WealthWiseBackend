@@ -163,12 +163,12 @@ def extract_transactions_from_bytes(pdf_bytes: bytes) -> pd.DataFrame:
 
     return df
 
-def extract_transactions_from_file(path: str, password: Optional[str] = None) -> List[Dict[str, Any]]:
-    pdf_bytes = open_pdf_as_bytes(path, password)
-    df = extract_transactions_from_bytes(pdf_bytes)
-    return enrich_transactions(df)
+# def extract_transactions_from_file(path: str, password: Optional[str] = None) -> List[Dict[str, Any]]:
+#     pdf_bytes = open_pdf_as_bytes(path, password)
+#     df = extract_transactions_from_bytes(pdf_bytes)
+#     return enrich_transactions(df)
 
-def extract_transactions_from_uploaded_bytes(pdf_bytes: bytes, password: Optional[str] = None) -> List[Dict[str, Any]]:
+def extract_transactions_from_uploaded_bytes(pdf_bytes: bytes, user_id, password: Optional[str] = None) -> List[Dict[str, Any]]:
     if password and fitz:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         if doc.is_encrypted:
@@ -177,6 +177,7 @@ def extract_transactions_from_uploaded_bytes(pdf_bytes: bytes, password: Optiona
             pdf_bytes = doc.tobytes()
         doc.close()
     df = extract_transactions_from_bytes(pdf_bytes)
+    df['user_id'] = user_id
     # return df.to_dict(orient="records")
     return enrich_transactions(df)
 
