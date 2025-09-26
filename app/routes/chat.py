@@ -1,32 +1,37 @@
-from fastapi import APIRouter, Depends, HTTPException
+# chat.py
+from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.security import HTTPBearer
 from app.utils.auth import verify_jwt
-from app.aimodels.gemini_service import get_finance_response
+from app.aimodels.openai_service import get_chat_response_openai
 import logging
+from pydantic import BaseModel
 
 router = APIRouter()
 security = HTTPBearer()
-
 logger = logging.getLogger(__name__)
 
+# Define a Pydantic model for the request body for better validation
+class ChatQuery(BaseModel):
+    query: str
+
 @router.post("/query")
-async def chat_with_bot(message: dict, token: str = Depends(security)):
+async def chat_with_bot(payload: ChatQuery, token: str = Depends(security)):
     user = verify_jwt(token.credentials)
-    if user:
-        user_message = message.get("query")
-        if not user_message:
-            raise HTTPException(status_code=400, detail="Missing query in request")
 
-        try:
-            reply = await get_finance_response(user_message)
-            if not reply:
-                raise ValueError("Empty response from Gemini")
+    # Use the unique user ID from the JWT as the session ID
+    user_id = user.get('sub')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
-            # ✅ Apply formatting/length limits here
-            # reply = format_message(reply)
+    try:
+        # 👇 Call the new function with the user_id and the message
+        reply = await get_chat_response_openai(user_id=user_id, user_message=payload.query)
 
-            return {"reply": reply}
+        if not reply:
+            raise ValueError("Empty response from the AI service")
 
-        except Exception as e:
-            logger.error(f"Chatbot error: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="AI service unavailable right now. Please try again later.")
+        return {"reply": reply}
+
+    except Exception as e:
+        logger.error(f"Chatbot error for user {user_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="AI service unavailable. Please try again later.")
