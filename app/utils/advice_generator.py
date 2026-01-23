@@ -160,6 +160,6 @@ async def generate_investment_advice(user_id: str, risk_profile: str, investment
         "investment_goal": investment_goal,
         "investment_horizon": investment_horizon,
         "financial_summary": financial_summary,
-        "market_data_used": market_data, # Renamed for clarity
+        "market_data_used": market_data,  # debiggung purpose
         "ai_advice": ai_advice_json
     }
