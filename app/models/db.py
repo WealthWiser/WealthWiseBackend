@@ -1,5 +1,5 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Date
-from sqlalchemy.dialects.postgresql import UUID, INET
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Date, Numeric, CheckConstraint, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID, INET, JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base
 import uuid
@@ -45,3 +45,33 @@ class LoginAudit(Base):
     success = Column(Boolean)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Transactions(Base):
+    __tablename__ = "transactions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+
+    txn_date = Column(Date, nullable=False)
+    description = Column(String, nullable=False)
+
+    debit = Column(Numeric(16, 2))
+    credit = Column(Numeric(16, 2))
+    amount = Column(Numeric(16, 2))
+    balance = Column(Numeric(16, 2))
+
+    category = Column(JSONB, nullable=False, server_default="{}")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "num_nonnulls(debit, credit) <= 1",
+            name="debit_credit_exclusive"
+        ),
+        UniqueConstraint(
+            "user_id", "txn_date", "amount", "description", "balance",
+            name="unique_txn_per_user"
+        ),
+    )

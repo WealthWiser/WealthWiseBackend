@@ -11,15 +11,15 @@ from app.models.auth import (
     LoginRequest,
     TokenResponse,
     RefreshRequest,
+    GoogleLoginRequest,
 )
 from app.utils.security import hash_password, verify_password
-from app.utils.auth import create_access_token
+from app.utils.auth import create_access_token, validate_google_idtoken
 from app.utils.login_audit import log_login_attempt
 from app.utils.refresh_tokens import (
     generate_refresh_token,
     hash_refresh_token,
 )
-from app.utils.dependencies import get_current_user_id
 
 router = APIRouter()
 REFRESH_TOKEN_EXPIRE_DAYS = 30
@@ -64,6 +64,34 @@ async def signup(data: SignupRequest, db: AsyncSession = Depends(get_db)):
         refresh_token=refresh_token,
     )
 
+@router.post("/google", response_model=TokenResponse)
+async def googleSignin(data: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        user = validate_google_idtoken(data.id_token) # user's email is verified and data is sent now
+        #  check if user with user['g_email'] exits in db
+        existing_user = await db.execute(select(User).where(User.email == user['g_email']))
+        existing_user = existing_user.scalar_one_or_none()
+        # CASE A: user's email is there in DB(users)
+        if existing_user:
+            # since user's email is there in the DB user mush have a password account before now connecting his google account
+            # we also need to check if he has a google login data in the table auth_user_providers
+            # case 1: User is first time google sign in
+                # link the user_id as a foreign key in auth_user_providers
+                # insert the user's data into the table auth_user_providers return {jwt,refresh_token}
+            # case 2: User is not first time google sing in
+                #  verify the user's sub update the profile picture etc send the data back
+                #  send the jwt and refresh now
+            pass
+
+        # CASE B: user's emails is not there in DB(users)
+        else:
+            #
+            pass
+
+        pass
+    except Exception:
+        print(Exception)
+        return HTTPException(status_code=500, detail="Server Error")
 
 @router.post("/login", response_model=TokenResponse)
 async def login(data: LoginRequest, request:Request, db: AsyncSession = Depends(get_db)):
@@ -169,24 +197,3 @@ async def logout(
         await db.commit()
 
     return {"message": "Logged out successfully"}
-
-@router.get("/me")
-async def me(
-    user_id: str = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return {
-        "id": str(user.id),
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "created_at": user.created_at,
-    }
